@@ -5,12 +5,15 @@ import re
 class OnSave(sublime_plugin.EventListener):
   
   def spaceParams(self, match):
-    res = re.sub(r'([+\-/*])', r' \1 ', match.group(0))
+    res = re.sub(r'(?<!\s)([+\-/*])(?!\s)', r' \1 ', match.group(0))
     res = re.sub(r'\s*(,)\s*', r'\1 ', res)
     ret = ' %s ' % (res.strip())
     
-    if res.find(',') == -1 and res[0] == '"' and res[len(res) - 1] == '"':
-        ret = res
+    isQuoteString = res[0] == '"' and res[len(res) - 1] == '"'
+    isTickString = res[0] == "'" and res[len(res) - 1] == "'"
+
+    if res.find(',') == -1 and (isQuoteString or isTickString):
+        ret = match.group(0)
     
     return ret
 
@@ -24,10 +27,10 @@ class OnSave(sublime_plugin.EventListener):
     otherCommas = ',(?!\s|$)'
 
     regions = view.find_all('\(')
-    
+
     for region in regions:
       line = view.line(region)
-      
+
       subLine = view.substr(line)
       subLine = re.sub(inParens, self.spaceParams, subLine)
       subLine = re.sub(inSqrBrackets, self.spaceParams, subLine)
